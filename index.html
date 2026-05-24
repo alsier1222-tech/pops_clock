@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grandparent Kiosk Clock</title>
+    <title>Grandparent Screen-Safe Clock</title>
     <style>
-        /* High-contrast, OLED/Battery-friendly dark theme */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -18,77 +17,107 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #0A0A0A;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #050505;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            transition: background-color 4s ease; /* Smoothly fades the background color changes */
         }
 
+        /* The container that holds the clock */
         .clock-container {
             text-align: center;
-            width: 100%;
             padding: 20px;
+            position: absolute;
+            width: 100%;
+            /* Smoothly moves the clock when it shifts location */
+            transition: all 1s ease-in-out; 
         }
 
         .date-display {
-            color: #888888;
-            font-size: 3.5vw; /* Scales dynamically based on screen width */
+            color: #A0A0A0;
+            font-size: 4vw; /* Even larger sizing */
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .time-display {
             color: #FFFFFF;
-            font-size: 15vw; /* Massive, ultra-readable display */
+            font-size: 18vw; /* Maximum screen-filling size */
             font-weight: 900;
-            line-height: 1;
-        }
-
-        /* Subtle hint at the bottom for them */
-        .status-display {
-            color: #333333;
-            font-size: 1.8vw;
-            font-weight: 500;
-            margin-top: 40px;
-            letter-spacing: 1px;
+            line-height: 0.95;
+            text-shadow: 0px 4px 20px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
-    <div class="clock-container">
-        <div id="date" class="date-display">Loading Date...</div>
+    <div id="kioskClock" class="clock-container">
+        <div id="date" class="date-display">...</div>
         <div id="time" class="time-display">00:00 AM</div>
-        <div class="status-display">KIOSK CLOCK ACTIVE</div>
     </div>
 
     <script>
+        const clock = document.getElementById('kioskClock');
+
+        // A list of very dark, screen-safe colors to rotate through
+        const safeColors = [
+            "#050505", // Deep Black
+            "#0A1128", // Deep Midnight Blue
+            "#1C0A10", // Very Dark Maroon
+            "#0B1A10", // Very Dark Forest Green
+            "#1A0B2E"  // Dark Royal Purple
+        ];
+
+        // Layout positions to prevent pixel burn-in
+        const positions = [
+            { top: "50%", transform: "translateY(-50%)" }, // Center
+            { top: "15%", transform: "translateY(0)" },     // Top
+            { top: "45%", transform: "translateY(-50%)" }, // Slightly Left/High
+            { top: "65%", transform: "translateY(-50%)" }, // Lower
+            { top: "50%", transform: "translateY(-50%)" }  // Center
+        ];
+
+        let cycleIndex = 0;
+
         function updateClock() {
             const now = new Date();
 
-            // 1. Format the Date (e.g., "SUNDAY, MAY 24")
+            // 1. Update Date
             const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
-            const dateString = now.toLocaleDateString('en-US', dateOptions);
-            document.getElementById('date').innerText = dateString;
+            document.getElementById('date').innerText = now.toLocaleDateString('en-US', dateOptions);
 
-            // 2. Format the Time (e.g., "07:05 PM")
+            // 2. Update Time
             let hours = now.getHours();
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             
             hours = hours % 12;
-            hours = hours ? hours : 12; // Convert '0' to '12'
+            hours = hours ? hours : 12;
             const hoursString = String(hours).padStart(2, '0');
 
             document.getElementById('time').innerText = `${hoursString}:${minutes} ${ampm}`;
         }
 
-        // Run immediately on load, then update every single second
+        function protectScreen() {
+            cycleIndex = (cycleIndex + 1) % safeColors.length;
+
+            // Shift background color gradually
+            document.body.style.backgroundColor = safeColors[cycleIndex];
+
+            // Shift clock physical location subtly
+            const nextPos = positions[cycleIndex];
+            clock.style.top = nextPos.top;
+            clock.style.transform = nextPos.transform;
+        }
+
+        // Run updates
         updateClock();
-        setInterval(updateClock, 1000);
+        setInterval(updateClock, 1000); // Check time every 1 second
+
+        // Run screen protection routine every 15 seconds
+        setInterval(protectScreen, 15000);
     </script>
 </body>
 </html>
